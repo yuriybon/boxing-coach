@@ -13,7 +13,7 @@ import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const secretClient = new SecretManagerServiceClient();
+let secretClient: SecretManagerServiceClient | null = null;
 
 async function getSecret(name: string): Promise<string | null> {
   try {
@@ -21,6 +21,11 @@ async function getSecret(name: string): Promise<string | null> {
     if (!project || project === "your-project-id") {
       return null;
     }
+
+    if (!secretClient) {
+      secretClient = new SecretManagerServiceClient();
+    }
+
     const [version] = await secretClient.accessSecretVersion({
       name: `projects/${project}/secrets/${name}/versions/latest`,
     });
@@ -46,14 +51,21 @@ async function startServer() {
     "SESSION_SECRET"
   ];
 
+  console.log("--- Loading Configuration ---");
   for (const secretName of secretsToLoad) {
-    if (!process.env[secretName]) {
+    if (process.env[secretName]) {
+      console.log(`[Config] ${secretName}: Loaded from Environment/.env`);
+    } else {
       const value = await getSecret(secretName);
       if (value) {
         process.env[secretName] = value;
+        console.log(`[Config] ${secretName}: Loaded from Google Secret Manager`);
+      } else {
+        console.warn(`[Config] ${secretName}: NOT FOUND (Environment or Secret Manager)`);
       }
     }
   }
+  console.log("-----------------------------\n");
 
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
