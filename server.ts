@@ -84,17 +84,19 @@ async function startServer() {
     return `${baseUrl}/api/auth/google/callback`;
   };
 
-  const isProduction = process.env.NODE_ENV === "production";
-
   // Session configuration for AI Studio iframe
+  const isProduction = process.env.NODE_ENV === "production";
+  console.log(`[Config] Running in ${isProduction ? "PRODUCTION" : "DEVELOPMENT"} mode`);
+
   app.use(
     cookieSession({
       name: "session",
       keys: [process.env.SESSION_SECRET || "boxing-coach-secret"],
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      secure: isProduction, // Only secure in production (HTTPS)
-      sameSite: isProduction ? "none" : "lax", // "none" requires "secure: true"
+      secure: isProduction, 
+      sameSite: isProduction ? "none" : "lax",
       httpOnly: true,
+      signed: true, // Ensure session is signed
     })
   );
 
@@ -197,7 +199,9 @@ async function startServer() {
   });
 
   app.get("/api/auth/me", (req, res) => {
-    res.json({ user: req.session?.user || null });
+    const user = req.session?.user || null;
+    console.log(`[Auth] /api/auth/me called. User in session: ${user ? user.email : "NONE"}`);
+    res.json({ user });
   });
 
   app.post("/api/auth/logout", (req, res) => {
