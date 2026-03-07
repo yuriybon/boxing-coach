@@ -29,7 +29,7 @@ export default function App() {
         <header className="flex items-center justify-between mb-12">
           <div>
             <h1 className="text-4xl md:text-6xl font-black tracking-tighter uppercase text-white">
-              Cornerman <span className="text-emerald-500">AI</span>
+              Coach <span className="text-emerald-500">AI</span>
             </h1>
             <p className="text-zinc-400 mt-2 font-mono text-sm uppercase tracking-widest">
               Live Multimodal Boxing Coach
