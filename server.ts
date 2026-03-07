@@ -17,15 +17,22 @@ const secretClient = new SecretManagerServiceClient();
 
 async function getSecret(name: string): Promise<string | null> {
   try {
-    // If we are in production and have a project ID, try to fetch from Secret Manager
-    const project = process.env.GOOGLE_CLOUD_PROJECT || "your-project-id";
+    const project = process.env.GOOGLE_CLOUD_PROJECT;
+    if (!project || project === "your-project-id") {
+      return null;
+    }
     const [version] = await secretClient.accessSecretVersion({
       name: `projects/${project}/secrets/${name}/versions/latest`,
     });
     const payload = version.payload?.data?.toString();
     return payload || null;
-  } catch (error) {
-    console.warn(`Could not fetch secret ${name} from Secret Manager, falling back to env.`);
+  } catch (error: any) {
+    // Specifically catch authentication errors to provide better guidance
+    if (error.message?.includes("Could not load the default credentials") || error.code === 16) {
+      console.warn(`[Auth] Google Cloud credentials not found. Skipping Secret Manager for ${name}. Run 'gcloud auth application-default login' to fix this.`);
+    } else {
+      console.warn(`[SecretManager] Could not fetch secret ${name}:`, error.message);
+    }
     return null;
   }
 }
