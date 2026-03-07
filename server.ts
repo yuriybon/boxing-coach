@@ -84,14 +84,16 @@ async function startServer() {
     return `${baseUrl}/api/auth/google/callback`;
   };
 
+  const isProduction = process.env.NODE_ENV === "production";
+
   // Session configuration for AI Studio iframe
   app.use(
     cookieSession({
       name: "session",
       keys: [process.env.SESSION_SECRET || "boxing-coach-secret"],
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      secure: true,
-      sameSite: "none",
+      secure: isProduction, // Only secure in production (HTTPS)
+      sameSite: isProduction ? "none" : "lax", // "none" requires "secure: true"
       httpOnly: true,
     })
   );
