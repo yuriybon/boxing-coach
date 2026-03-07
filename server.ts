@@ -30,7 +30,7 @@ async function getSecret(name: string): Promise<string | null> {
       name: `projects/${project}/secrets/${name}/versions/latest`,
     });
     const payload = version.payload?.data?.toString();
-    return payload || null;
+    return payload?.trim() || null;
   } catch (error: any) {
     // Specifically catch authentication errors to provide better guidance
     if (error.message?.includes("Could not load the default credentials") || error.code === 16) {
@@ -78,6 +78,12 @@ async function startServer() {
   const server = createServer(app);
   const PORT = process.env.PORT || 3000;
 
+  // Centralized redirect URI logic
+  const getRedirectUri = () => {
+    const baseUrl = process.env.APP_URL?.replace(/\/$/, "") || `http://localhost:${PORT}`;
+    return `${baseUrl}/api/auth/google/callback`;
+  };
+
   // Session configuration for AI Studio iframe
   app.use(
     cookieSession({
@@ -97,7 +103,8 @@ async function startServer() {
 
   // Auth Routes
   app.get("/api/auth/google/url", (req, res) => {
-    const redirectUri = `${process.env.APP_URL || `http://localhost:${PORT}`}/api/auth/google/callback`;
+    const redirectUri = getRedirectUri();
+    console.log(`[Auth] Generating Auth URL with redirect_uri: ${redirectUri}`);
     const url = oauth2Client.generateAuthUrl({
       access_type: "offline",
       scope: ["https://www.googleapis.com/auth/userinfo.profile", "https://www.googleapis.com/auth/userinfo.email"],
@@ -108,14 +115,24 @@ async function startServer() {
 
   app.get("/api/auth/google/callback", async (req, res) => {
     const { code } = req.query;
-    const redirectUri = `${process.env.APP_URL || `http://localhost:${PORT}`}/api/auth/google/callback`;
+    const redirectUri = getRedirectUri();
+    console.log(`[Auth] Handling callback with redirect_uri: ${redirectUri}`);
     
+    if (!code) {
+      return res.status(400).send("No code provided");
+    }
+
     try {
+      console.log(`[Auth] Attempting token exchange for code: ${code.toString().substring(0, 10)}...`);
+      console.log(`[Auth] Using Client ID: ${process.env.GOOGLE_CLIENT_ID?.substring(0, 10)}...`);
+      console.log(`[Auth] Client Secret Length: ${process.env.GOOGLE_CLIENT_SECRET?.length || 0}`);
+      
       const { tokens } = await oauth2Client.getToken({
         code: code as string,
         redirect_uri: redirectUri,
       });
       
+      console.log("[Auth] Token exchange successful");
       oauth2Client.setCredentials(tokens);
       
       const ticket = await oauth2Client.verifyIdToken({
@@ -149,9 +166,15 @@ async function startServer() {
           </body>
         </html>
       `);
-    } catch (error) {
-      console.error("Auth error:", error);
-      res.status(500).send("Authentication failed");
+    } catch (error: any) {
+      console.error("[Auth] Token exchange failed detail:");
+      if (error.response) {
+        console.error("Status:", error.response.status);
+        console.error("Data:", JSON.stringify(error.response.data, null, 2));
+      } else {
+        console.error("Message:", error.message);
+      }
+      res.status(500).send("Authentication failed. Check server logs for details.");
     }
   });
 
