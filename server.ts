@@ -155,16 +155,32 @@ async function startServer() {
 
       res.send(`
         <html>
+          <head>
+            <title>Authentication Successful</title>
+            <style>
+              body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f4f4f9; }
+              .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
+              button { background: #1a73e8; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 1rem; }
+              button:hover { background: #1557b0; }
+            </style>
+          </head>
           <body>
+            <div class="card">
+              <h2>Success!</h2>
+              <p>Authentication was successful. This window should close automatically.</p>
+              <button onclick="window.close()">Close Window</button>
+            </div>
             <script>
+              // Try to notify the parent window
               if (window.opener) {
                 window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
-                window.close();
-              } else {
-                window.location.href = '/';
               }
+              
+              // Try to close the window automatically
+              setTimeout(() => {
+                window.close();
+              }, 1000);
             </script>
-            <p>Authentication successful. This window should close automatically.</p>
           </body>
         </html>
       `);
