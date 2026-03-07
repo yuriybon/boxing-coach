@@ -16,27 +16,41 @@ const __dirname = path.dirname(__filename);
 let secretClient: SecretManagerServiceClient | null = null;
 
 async function getSecret(name: string): Promise<string | null> {
-  try {
-    const project = process.env.GOOGLE_CLOUD_PROJECT;
-    if (!project || project === "your-project-id") {
-      return null;
-    }
+  const project = process.env.GOOGLE_CLOUD_PROJECT;
+  
+  if (!project || project === "your-project-id") {
+    console.log(`[SecretManager] Skipping ${name}: GOOGLE_CLOUD_PROJECT is not set or is default.`);
+    return null;
+  }
 
+  try {
     if (!secretClient) {
+      console.log(`[SecretManager] Initializing client for project: ${project}`);
       secretClient = new SecretManagerServiceClient();
     }
 
+    const secretPath = `projects/${project}/secrets/${name}/versions/latest`;
     const [version] = await secretClient.accessSecretVersion({
-      name: `projects/${project}/secrets/${name}/versions/latest`,
+      name: secretPath,
     });
+    
     const payload = version.payload?.data?.toString();
-    return payload?.trim() || null;
+    if (payload) {
+      console.log(`[SecretManager] Successfully fetched: ${name}`);
+      return payload.trim();
+    }
+    return null;
   } catch (error: any) {
-    // Specifically catch authentication errors to provide better guidance
     if (error.message?.includes("Could not load the default credentials") || error.code === 16) {
-      console.warn(`[Auth] Google Cloud credentials not found. Skipping Secret Manager for ${name}. Run 'gcloud auth application-default login' to fix this.`);
+      console.error(`[SecretManager] AUTH ERROR: Could not find Application Default Credentials.`);
+      console.error(`[SecretManager] ACTION REQUIRED: Run 'gcloud auth application-default login' in your terminal.`);
+    } else if (error.code === 7) {
+      console.error(`[SecretManager] PERMISSION DENIED: Your account doesn't have access to secret '${name}'.`);
+      console.error(`[SecretManager] ACTION REQUIRED: Grant 'Secret Manager Secret Accessor' role to your identity in Google Cloud Console.`);
+    } else if (error.code === 5) {
+      console.warn(`[SecretManager] NOT FOUND: Secret '${name}' does not exist in project '${project}'.`);
     } else {
-      console.warn(`[SecretManager] Could not fetch secret ${name}:`, error.message);
+      console.warn(`[SecretManager] Error fetching ${name}:`, error.message);
     }
     return null;
   }
@@ -52,6 +66,8 @@ async function startServer() {
   ];
 
   console.log("--- Loading Configuration ---");
+  console.log(`[Config] Project ID: ${process.env.GOOGLE_CLOUD_PROJECT || "NOT SET"}`);
+  
   for (const secretName of secretsToLoad) {
     if (process.env[secretName]) {
       console.log(`[Config] ${secretName}: Loaded from Environment/.env`);
@@ -86,17 +102,22 @@ async function startServer() {
 
   // Session configuration for AI Studio iframe
   const isProduction = process.env.NODE_ENV === "production";
+  const baseUrl = process.env.APP_URL || `http://localhost:${PORT}`;
+  const isLocalhost = baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1");
+  
   console.log(`[Config] Running in ${isProduction ? "PRODUCTION" : "DEVELOPMENT"} mode`);
+  console.log(`[Config] Localhost detected: ${isLocalhost}. Cookies will be ${isLocalhost ? "INSECURE" : "SECURE"}.`);
 
   app.use(
     cookieSession({
       name: "session",
       keys: [process.env.SESSION_SECRET || "boxing-coach-secret"],
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      secure: isProduction, 
-      sameSite: isProduction ? "none" : "lax",
+      // CRITICAL: secure: true requires HTTPS. On localhost we must use false.
+      secure: isProduction && !isLocalhost, 
+      sameSite: isProduction && !isLocalhost ? "none" : "lax",
       httpOnly: true,
-      signed: true, // Ensure session is signed
+      signed: true,
     })
   );
 
