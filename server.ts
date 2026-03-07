@@ -26,6 +26,7 @@ async function getSecret(name: string): Promise<string | null> {
   try {
     if (!secretClient) {
       console.log(`[SecretManager] Initializing client for project: ${project}`);
+      // In Cloud Run, this will use the service account attached to the revision
       secretClient = new SecretManagerServiceClient();
     }
 
@@ -91,13 +92,28 @@ async function startServer() {
   );
 
   const app = express();
+  
+  // REQUIRED for cookies to work on Cloud Run / behind a proxy
+  app.set("trust proxy", 1);
+
   const server = createServer(app);
   const PORT = process.env.PORT || 3000;
 
   // Centralized redirect URI logic
-  const getRedirectUri = () => {
-    const baseUrl = process.env.APP_URL?.replace(/\/$/, "") || `http://localhost:${PORT}`;
-    return `${baseUrl}/api/auth/google/callback`;
+  const getRedirectUri = (req?: express.Request) => {
+    if (process.env.APP_URL) {
+      const baseUrl = process.env.APP_URL.replace(/\/$/, "");
+      return `${baseUrl}/api/auth/google/callback`;
+    }
+    
+    if (req) {
+      // Cloud Run and other proxies set these headers
+      const protocol = req.headers["x-forwarded-proto"] || "http";
+      const host = req.headers["host"];
+      return `${protocol}://${host}/api/auth/google/callback`;
+    }
+
+    return `http://localhost:${PORT}/api/auth/google/callback`;
   };
 
   // Session configuration for AI Studio iframe
@@ -113,8 +129,10 @@ async function startServer() {
       name: "session",
       keys: [process.env.SESSION_SECRET || "boxing-coach-secret"],
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      // CRITICAL: secure: true requires HTTPS. On localhost we must use false.
-      secure: isProduction && !isLocalhost, 
+      // In Cloud Run, we are always behind HTTPS, so secure should be true
+      // unless we are on localhost.
+      secure: isProduction && !isLocalhost,
+      // 'none' is required for iframes (AI Studio), 'lax' is better for direct access
       sameSite: isProduction && !isLocalhost ? "none" : "lax",
       httpOnly: true,
       signed: true,
@@ -128,7 +146,7 @@ async function startServer() {
 
   // Auth Routes
   app.get("/api/auth/google/url", (req, res) => {
-    const redirectUri = getRedirectUri();
+    const redirectUri = getRedirectUri(req);
     console.log(`[Auth] Generating Auth URL with redirect_uri: ${redirectUri}`);
     const url = oauth2Client.generateAuthUrl({
       access_type: "offline",
@@ -140,7 +158,7 @@ async function startServer() {
 
   app.get("/api/auth/google/callback", async (req, res) => {
     const { code } = req.query;
-    const redirectUri = getRedirectUri();
+    const redirectUri = getRedirectUri(req);
     console.log(`[Auth] Handling callback with redirect_uri: ${redirectUri}`);
     
     if (!code) {
