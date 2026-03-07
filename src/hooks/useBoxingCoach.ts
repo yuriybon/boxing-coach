@@ -22,7 +22,12 @@ export function useBoxingCoach() {
     videoRef.current = videoElement;
 
     try {
-      // 1. Get media permissions
+      // 1. Check if mediaDevices API is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error("Your browser or connection does not support camera/microphone access. Ensure you are using HTTPS or localhost.");
+      }
+
+      // 2. Get media permissions
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           sampleRate: 16000,
@@ -40,8 +45,12 @@ export function useBoxingCoach() {
       videoElement.srcObject = stream;
       await videoElement.play();
 
-      // 2. Setup Audio Context
-      audioContextRef.current = new window.AudioContext({ sampleRate: 16000 });
+      // 3. Setup Audio Context
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) {
+        throw new Error("Web Audio API is not supported in this browser.");
+      }
+      audioContextRef.current = new AudioContextClass({ sampleRate: 16000 });
       const source = audioContextRef.current.createMediaStreamSource(stream);
       const processor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
       processorRef.current = processor;
