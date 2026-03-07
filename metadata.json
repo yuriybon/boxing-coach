@@ -1,0 +1,5 @@
+{
+  "name": "Cornerman AI",
+  "description": "A live multimodal boxing coach that sees form, hears effort, and speaks in real time using Gemini Live API.",
+  "requestFramePermissions": ["camera", "microphone"]
+}
