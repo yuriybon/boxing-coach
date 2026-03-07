@@ -29,14 +29,20 @@ export function useAuth() {
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // Validate origin
+      // Validate origin - support localhost, 127.0.0.1 and production domains
       const origin = event.origin;
-      if (!origin.endsWith('.run.app') && !origin.includes('localhost')) {
-        return;
-      }
+      const isAllowedOrigin = 
+        origin.endsWith('.run.app') || 
+        origin.includes('localhost') || 
+        origin.includes('127.0.0.1');
+
+      if (!isAllowedOrigin) return;
       
       if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
-        fetchUser();
+        // Small delay to ensure cookies are settled in the browser
+        setTimeout(() => {
+          fetchUser();
+        }, 500);
       }
     };
     window.addEventListener('message', handleMessage);
