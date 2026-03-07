@@ -123,21 +123,31 @@ async function startServer() {
   
   console.log(`[Config] Running in ${isProduction ? "PRODUCTION" : "DEVELOPMENT"} mode`);
   console.log(`[Config] Localhost detected: ${isLocalhost}. Cookies will be ${isLocalhost ? "INSECURE" : "SECURE"}.`);
+  console.log(`[Config] SESSION_SECRET present: ${!!process.env.SESSION_SECRET}`);
 
-  app.use(
+  app.use((req, res, next) => {
+    // Dynamically determine SameSite based on context
+    // If we're in an iframe (like AI Studio), we need 'none'
+    // If we're on mobile or direct access, 'lax' is more compatible
+    const isIframe = req.headers["sec-fetch-dest"] === "iframe" || 
+                     req.headers["referer"]?.includes("aistudio.google.com");
+    
+    const sameSite = isProduction && !isLocalhost 
+      ? (isIframe ? "none" : "lax") 
+      : "lax";
+
     cookieSession({
       name: "session",
       keys: [process.env.SESSION_SECRET || "boxing-coach-secret"],
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
-      // In Cloud Run, we are always behind HTTPS, so secure should be true
-      // unless we are on localhost.
       secure: isProduction && !isLocalhost,
-      // 'none' is required for iframes (AI Studio), 'lax' is better for direct access
-      sameSite: isProduction && !isLocalhost ? "none" : "lax",
+      sameSite: sameSite as any,
       httpOnly: true,
       signed: true,
-    })
-  );
+      // @ts-ignore - partitioned is supported in modern browsers for cross-site cookies
+      partitioned: isProduction && !isLocalhost && sameSite === "none",
+    })(req, res, next);
+  });
 
   // 1. API routes
   app.get("/api/health", (req, res) => {
@@ -194,33 +204,45 @@ async function startServer() {
         };
       }
 
+      res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
       res.send(`
         <html>
           <head>
             <title>Authentication Successful</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
             <style>
-              body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f4f4f9; }
-              .card { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; }
-              button { background: #1a73e8; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 1rem; }
-              button:hover { background: #1557b0; }
+              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #09090b; color: white; }
+              .card { background: #18181b; padding: 2.5rem; border-radius: 24px; border: 1px solid #27272a; text-align: center; max-width: 90%; width: 400px; }
+              .icon { width: 64px; height: 64px; background: #10b98120; color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 32px; }
+              h2 { margin: 0 0 0.5rem; font-weight: 800; letter-spacing: -0.025em; }
+              p { color: #a1a1aa; margin-bottom: 2rem; line-height: 1.5; }
+              .btn { background: white; color: black; border: none; padding: 12px 24px; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 700; text-decoration: none; display: inline-block; transition: all 0.2s; text-transform: uppercase; letter-spacing: 0.05em; }
+              .btn:hover { background: #e4e4e7; transform: translateY(-1px); }
             </style>
           </head>
           <body>
             <div class="card">
+              <div class="icon">✓</div>
               <h2>Success!</h2>
-              <p>Authentication was successful. This window should close automatically.</p>
-              <button onclick="window.close()">Close Window</button>
+              <p>You've successfully signed in to Cornerman AI. You can now close this window and start training.</p>
+              <a href="/" class="btn" id="action-btn">Return to App</a>
             </div>
             <script>
-              // Try to notify the parent window
+              // 1. Try to notify the parent window (if it's a popup)
               if (window.opener) {
-                window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
+                try {
+                  window.opener.postMessage({ type: 'OAUTH_AUTH_SUCCESS' }, '*');
+                  // If we have an opener, we can try to close
+                  setTimeout(() => {
+                    window.close();
+                  }, 1500);
+                } catch (e) {
+                  console.error("Failed to postMessage to opener:", e);
+                }
+              } else {
+                // 2. If no opener (common on mobile), change button text
+                document.getElementById('action-btn').innerText = 'Open App';
               }
-              
-              // Try to close the window automatically
-              setTimeout(() => {
-                window.close();
-              }, 1000);
             </script>
           </body>
         </html>

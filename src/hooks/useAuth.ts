@@ -25,6 +25,17 @@ export function useAuth() {
 
   useEffect(() => {
     fetchUser();
+    
+    // Re-fetch user when the page becomes visible again
+    // This is helpful for mobile where OAuth might happen in a new tab
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchUser();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [fetchUser]);
 
   useEffect(() => {
@@ -59,11 +70,16 @@ export function useAuth() {
       const left = window.screenX + (window.outerWidth - width) / 2;
       const top = window.screenY + (window.outerHeight - height) / 2;
       
-      window.open(
+      const popup = window.open(
         url,
         'google_login',
         `width=${width},height=${height},left=${left},top=${top}`
       );
+
+      // If popup was blocked (common on mobile), fallback to direct redirect
+      if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+        window.location.href = url;
+      }
     } catch (error) {
       console.error('Login failed:', error);
     }

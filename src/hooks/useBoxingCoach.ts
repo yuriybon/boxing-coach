@@ -50,9 +50,24 @@ export function useBoxingCoach() {
       if (!AudioContextClass) {
         throw new Error("Web Audio API is not supported in this browser.");
       }
-      audioContextRef.current = new AudioContextClass({ sampleRate: 16000 });
-      const source = audioContextRef.current.createMediaStreamSource(stream);
-      const processor = audioContextRef.current.createScriptProcessor(4096, 1, 1);
+      
+      // On iOS, AudioContext must be resumed within a user gesture
+      const audioContext = new AudioContextClass({ sampleRate: 16000 });
+      if (audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+      
+      // Unlock audio on iOS by playing a short silent buffer
+      const silentBuffer = audioContext.createBuffer(1, 1, 22050);
+      const silentSource = audioContext.createBufferSource();
+      silentSource.buffer = silentBuffer;
+      silentSource.connect(audioContext.destination);
+      silentSource.start(0);
+      
+      audioContextRef.current = audioContext;
+
+      const source = audioContext.createMediaStreamSource(stream);
+      const processor = audioContext.createScriptProcessor(4096, 1, 1);
       processorRef.current = processor;
 
       // 3. Connect to our Backend via WebSocket
@@ -100,7 +115,7 @@ export function useBoxingCoach() {
         }, 1000); // 1 frame per second
       };
 
-      ws.onmessage = (event) => {
+      ws.onmessage = async (event) => {
         const msg = JSON.parse(event.data);
         
         // Handle audio output
@@ -111,7 +126,7 @@ export function useBoxingCoach() {
           for (let i = 0; i < int16Array.length; i++) {
             float32Array[i] = int16Array[i] / 32768.0;
           }
-          playAudio(float32Array);
+          await playAudio(float32Array);
         }
         
         // Handle interruption
@@ -143,8 +158,13 @@ export function useBoxingCoach() {
     }
   };
 
-  const playAudio = (audioData: Float32Array) => {
+  const playAudio = async (audioData: Float32Array) => {
     if (!audioContextRef.current) return;
+    
+    // Ensure context is running (iOS Safari requirement)
+    if (audioContextRef.current.state === 'suspended') {
+      await audioContextRef.current.resume();
+    }
     
     const audioBuffer = audioContextRef.current.createBuffer(1, audioData.length, 24000);
     audioBuffer.getChannelData(0).set(audioData);
