@@ -1,8 +1,14 @@
+import "dotenv/config";
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import { createServer } from "http";
 import { WebSocketServer } from "ws";
 import { GoogleGenAI, LiveServerMessage, Modality } from "@google/genai";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -94,6 +100,14 @@ async function startServer() {
       appType: "spa",
     });
     app.use(vite.middlewares);
+  } else {
+    // Serve static files from dist in production
+    app.use(express.static(path.join(__dirname, "dist")));
+    
+    // Catch-all route to serve index.html for SPA
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(__dirname, "dist", "index.html"));
+    });
   }
 
   server.listen(PORT, "0.0.0.0", () => {
