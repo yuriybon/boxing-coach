@@ -1,0 +1,19 @@
+{
+  "extends": "assemblyscript/std/assembly.json",
+  "compilerOptions": {
+    "target": "es2020",
+    "lib": [
+      "assembly"
+    ],
+    "declaration": true,
+    "declarationDir": ".",
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": false,
+    "importHelpers": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "*.ts"
+  ]
+}

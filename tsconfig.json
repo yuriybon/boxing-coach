@@ -1,26 +1,54 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "experimentalDecorators": true,
-    "useDefineForClassFields": false,
     "module": "ESNext",
     "lib": [
       "ES2022",
       "DOM",
-      "DOM.Iterable"
+      "DOM.Iterable",
+      "WebWorker"
     ],
-    "skipLibCheck": true,
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    
+    
+    "forceConsistentCasingInFileNames": true,
+
+    
     "moduleResolution": "bundler",
-    "isolatedModules": true,
     "moduleDetection": "force",
     "allowJs": true,
-    "jsx": "react-jsx",
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    
+    "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+        "@/*": ["./src/*"],
+        "@components/*": ["./src/components/*"],
+        "@lib/*": ["./src/lib/*"],
+        "@utils/*": ["./src/utils/*"],
+        "@types/*": ["./src/types/*"],
+        "@wasm/*": ["./src/wasm/*"]
     },
+
+
+    "jsx": "react-jsx",
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
     "allowImportingTsExtensions": true,
+
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "declaration": false,
+    "emitDeclarationOnly": false,
     "noEmit": true
-  }
+  },
+  
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "build"]
 }
