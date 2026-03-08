@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "boxing_coach",
+  "project_id": "0121933f-72e5-4d5d-9e65-5ddce205eef6"
+}
