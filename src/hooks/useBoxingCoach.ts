@@ -67,7 +67,7 @@ export function useBoxingCoach() {
       audioContextRef.current = audioContext;
 
       const source = audioContext.createMediaStreamSource(stream);
-      const processor = audioContext.createScriptProcessor(4096, 1, 1);
+      const processor = audioContext.createScriptProcessor(512, 1, 1);
       processorRef.current = processor;
 
       // 3. Connect to our Backend via WebSocket
