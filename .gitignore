@@ -7,3 +7,6 @@ coverage/
 .env*
 !.env.example
 prod-verification
+tmp
+*.bak
+test-live.js

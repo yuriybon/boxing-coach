@@ -38,12 +38,12 @@ export const CONCIERGE_TOOLS = [
       {
         name: "plan_session",
         description: "Finalize the pre-training interview and transition to the boxing coach.",
-        parameters: {
-          type: "OBJECT",
+        parametersJsonSchema: {
+          type: "object",
           properties: {
-            injuries: { type: "STRING", description: "User's physical status or injuries." },
-            energy: { type: "STRING", description: "User's reported energy level." },
-            focus: { type: "STRING", description: "Desired focus for the training session." },
+            injuries: { type: "string", description: "User's physical status or injuries." },
+            energy: { type: "string", description: "User's reported energy level." },
+            focus: { type: "string", description: "Desired focus for the training session." },
           },
           required: ["injuries", "energy", "focus"],
         },

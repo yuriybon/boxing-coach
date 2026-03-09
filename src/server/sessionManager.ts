@@ -1,11 +1,11 @@
 import { WebSocket } from "ws";
-import { GoogleGenAI, LiveSession, Modality, LiveServerMessage } from "@google/genai";
+import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
 import { CONCIERGE_SYS_INSTRUCT, CONCIERGE_TOOLS, COACH_SYS_INSTRUCT_TEMPLATE, STATS_SYS_INSTRUCT } from "./prompts";
 
 export class SessionManager {
   private ws: WebSocket;
   private genAI: GoogleGenAI;
-  private currentSession: LiveSession | null = null;
+  private currentSession: any | null = null;
   private transcript: { speaker: string; text: string; timestamp: number }[] = [];
   private startTime: number = 0;
   private sessionContext: { injuries: string; energy: string; focus: string } | null = null;
@@ -68,7 +68,7 @@ export class SessionManager {
       this.currentSession = await this.genAI.live.connect({
         model: "gemini-2.5-flash-native-audio-preview-09-2025",
         config: {
-          responseModalities: [Modality.AUDIO, Modality.TEXT],
+          responseModalities: [Modality.AUDIO],
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } },
           },
@@ -173,8 +173,6 @@ export class SessionManager {
 
   private async generateStats() {
     try {
-      const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-      
       const prompt = `
       ${STATS_SYS_INSTRUCT}
       
@@ -185,12 +183,19 @@ export class SessionManager {
       ${this.transcript.map(t => `[${new Date(t.timestamp).toISOString()}] ${t.speaker}: ${t.text}`).join('\n')}
       `;
 
-      const result = await model.generateContent({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: "application/json" }
+      const result = await this.genAI.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json"
+        }
       });
 
-      return JSON.parse(result.response.text());
+      if (!result.text) {
+        throw new Error("No text returned from Gemini");
+      }
+
+      return JSON.parse(result.text);
     } catch (error) {
       console.error("Failed to generate stats:", error);
       return null;
