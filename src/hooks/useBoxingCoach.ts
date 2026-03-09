@@ -4,6 +4,7 @@ import { floatTo16BitPCM, base64ToArrayBuffer, arrayBufferToBase64 } from '../li
 export function useBoxingCoach() {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [mode, setMode] = useState<'concierge' | 'coach' | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   const wsRef = useRef<WebSocket | null>(null);
@@ -79,6 +80,7 @@ export function useBoxingCoach() {
       ws.onopen = () => {
         setIsConnected(true);
         setIsConnecting(false);
+        setMode('concierge');
 
         // Start sending audio
         processor.onaudioprocess = (e) => {
@@ -118,6 +120,11 @@ export function useBoxingCoach() {
       ws.onmessage = async (event) => {
         const msg = JSON.parse(event.data);
         
+        // Handle mode change
+        if (msg.type === 'mode_change') {
+          setMode(msg.mode);
+        }
+
         // Handle audio output
         if (msg.type === 'audio') {
           const pcmBuffer = base64ToArrayBuffer(msg.data);
@@ -205,6 +212,7 @@ export function useBoxingCoach() {
     }
     setIsConnected(false);
     setIsConnecting(false);
+    setMode(null);
     nextPlayTimeRef.current = 0;
   }, []);
 
