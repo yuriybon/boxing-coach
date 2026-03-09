@@ -14,7 +14,7 @@ WORKDIR /app
 COPY package*.json ./
 # Install ONLY production dependencies (skips vitest, etc.)
 # NOTE: We moved 'tsx' to dependencies, so it WILL be installed here.
-RUN npm ci --omit=dev
+RUN npm install --omit=dev
 
 # Copy built frontend assets
 COPY --from=builder /app/dist ./dist
