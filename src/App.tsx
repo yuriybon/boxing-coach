@@ -11,7 +11,7 @@ import { Mic, MicOff, Video, Activity, AlertCircle, LogOut, User as UserIcon } f
 export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { user, isLoading, login, logout } = useAuth();
-  const { isConnected, isConnecting, error, connect, disconnect } = useBoxingCoach();
+  const { isConnected, isConnecting, mode, error, connect, disconnect } = useBoxingCoach();
 
   const handleToggleConnect = () => {
     if (isConnected || isConnecting) {
@@ -88,15 +88,19 @@ export default function App() {
             
             <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border font-mono text-xs uppercase tracking-wider ${
               isConnected 
-                ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' 
+                ? (mode === 'concierge' ? 'border-cyan-500/30 bg-cyan-500/10 text-cyan-400' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400')
                 : isConnecting
                 ? 'border-amber-500/30 bg-amber-500/10 text-amber-400'
                 : 'border-zinc-800 bg-zinc-900 text-zinc-500'
             }`}>
               <div className={`w-2 h-2 rounded-full ${
-                isConnected ? 'bg-emerald-500 animate-pulse' : isConnecting ? 'bg-amber-500 animate-pulse' : 'bg-zinc-600'
+                isConnected 
+                  ? (mode === 'concierge' ? 'bg-cyan-500 animate-pulse' : 'bg-emerald-500 animate-pulse') 
+                  : isConnecting ? 'bg-amber-500 animate-pulse' : 'bg-zinc-600'
               }`} />
-              {isConnected ? 'Live' : isConnecting ? 'Connecting...' : 'Standby'}
+              {isConnected 
+                ? (mode === 'concierge' ? 'Pre-Session' : 'Training Live') 
+                : isConnecting ? 'Connecting...' : 'Standby'}
             </div>
           </div>
         </header>

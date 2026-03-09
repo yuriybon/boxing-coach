@@ -270,6 +270,8 @@ async function startServer() {
     res.json({ success: true });
   });
 
+import { SessionManager } from "./src/server/sessionManager";
+
   // 2. WebSocket Server for Gemini Live API
   const wss = new WebSocketServer({ server });
 
@@ -279,54 +281,18 @@ async function startServer() {
       return;
     }
 
-    // Simple session check for WebSocket (requires parsing cookie from handshake)
-    // For this demo, we'll assume the client will handle auth state, 
-    // but in production you'd verify the session cookie here.
-    
     console.log("Client connected to /ws/coach");
-    let session: any = null;
+    const sessionManager = new SessionManager(ws, ai);
 
     try {
-      // Connect to Gemini Live API securely on the backend
-      session = await ai.live.connect({
-        model: "gemini-2.5-flash-native-audio-preview-09-2025",
-        config: {
-          responseModalities: [Modality.AUDIO],
-          speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } },
-          },
-          systemInstruction: "You are Cornerman AI, a tough, motivating, and expert boxing coach. You are watching the user train on a punch bag or shadow boxing. Call out combinations (e.g., 'Jab, cross, hook!', '1, 2, 3!'). Watch their form and provide real-time feedback. Listen to their breathing and punches. If they stop, motivate them. Keep your responses short, punchy, and actionable. Adapt if they interrupt you.",
-        },
-        callbacks: {
-          onmessage: (message: LiveServerMessage) => {
-            // Forward audio to frontend
-            const base64Audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
-            if (base64Audio) {
-              ws.send(JSON.stringify({ type: "audio", data: base64Audio }));
-            }
-            
-            // Forward interruptions to frontend
-            if (message.serverContent?.interrupted) {
-              ws.send(JSON.stringify({ type: "interrupted" }));
-            }
-          },
-          onerror: (err) => {
-            console.error("Gemini Error:", err);
-            ws.send(JSON.stringify({ type: "error", message: err.message }));
-          },
-          onclose: () => {
-            console.log("Gemini connection closed");
-            ws.close();
-          }
-        }
-      });
+      await sessionManager.start();
 
       // Handle incoming messages from frontend (audio/video frames)
       ws.on("message", async (data) => {
         try {
           const msg = JSON.parse(data.toString());
-          if (msg.type === "realtime_input" && session) {
-            await session.sendRealtimeInput({ media: msg.media });
+          if (msg.type === "realtime_input") {
+            await sessionManager.sendRealtimeInput(msg.media);
           }
         } catch (e) {
           console.error("Error processing WS message:", e);
@@ -335,7 +301,7 @@ async function startServer() {
 
       ws.on("close", () => {
         console.log("Client disconnected");
-        if (session) session.close();
+        sessionManager.close();
       });
 
     } catch (err: any) {
