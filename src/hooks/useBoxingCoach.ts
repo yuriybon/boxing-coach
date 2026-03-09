@@ -189,6 +189,12 @@ export function useBoxingCoach() {
     nextPlayTimeRef.current += audioBuffer.duration;
   };
 
+  const startTraining = useCallback(() => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'start_training' }));
+    }
+  }, []);
+
   const disconnect = useCallback(() => {
     if (wsRef.current) {
       wsRef.current.close();
@@ -225,8 +231,10 @@ export function useBoxingCoach() {
   return {
     isConnected,
     isConnecting,
+    mode,
     error,
     connect,
     disconnect,
+    startTraining,
   };
 }

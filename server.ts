@@ -294,6 +294,8 @@ async function startServer() {
           const msg = JSON.parse(data.toString());
           if (msg.type === "realtime_input") {
             await sessionManager.sendRealtimeInput(msg.media);
+          } else if (msg.type === "start_training") {
+            await sessionManager.startHardTraining();
           }
         } catch (e) {
           console.error("Error processing WS message:", e);

@@ -19,6 +19,15 @@ export class SessionManager {
     await this.startConciergeSession();
   }
 
+  async startHardTraining() {
+    console.log("Starting Hard Training Session (Manual Override)");
+    await this.startCoachSession({
+      injuries: "None",
+      energy: "High (Hard Mode)",
+      focus: "Intensity & Power"
+    });
+  }
+
   private async startConciergeSession() {
     try {
       this.currentSession = await this.genAI.live.connect({
