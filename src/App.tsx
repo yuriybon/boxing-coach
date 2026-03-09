@@ -11,7 +11,7 @@ import { Mic, MicOff, Video, Activity, AlertCircle, LogOut, User as UserIcon } f
 export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { user, isLoading, login, logout } = useAuth();
-  const { isConnected, isConnecting, mode, error, connect, disconnect } = useBoxingCoach();
+  const { isConnected, isConnecting, mode, error, connect, disconnect, startTraining } = useBoxingCoach();
 
   const handleToggleConnect = () => {
     if (isConnected || isConnecting) {
@@ -187,6 +187,16 @@ export default function App() {
                   </>
                 )}
               </button>
+
+              {isConnected && mode === 'concierge' && (
+                <button
+                  onClick={startTraining}
+                  className="w-full py-3 rounded-xl font-bold uppercase tracking-widest text-sm transition-all duration-200 flex items-center justify-center gap-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30"
+                >
+                  <Activity className="w-5 h-5" />
+                  Quick Start (Hard)
+                </button>
+              )}
             </div>
 
             {/* Instructions */}
