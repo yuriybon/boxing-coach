@@ -9,6 +9,7 @@ import { fileURLToPath } from "url";
 import { OAuth2Client } from "google-auth-library";
 import cookieSession from "cookie-session";
 import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
+import { SessionManager } from "./src/server/sessionManager";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -270,7 +271,7 @@ async function startServer() {
     res.json({ success: true });
   });
 
-import { SessionManager } from "./src/server/sessionManager";
+
 
   // 2. WebSocket Server for Gemini Live API
   const wss = new WebSocketServer({ server });
