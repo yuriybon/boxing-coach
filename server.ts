@@ -322,14 +322,14 @@ async function startServer() {
       });
 
       // Handle incoming messages from frontend (audio/video frames)
-      ws.on("message", (data) => {
+      ws.on("message", async (data) => {
         try {
           const msg = JSON.parse(data.toString());
           if (msg.type === "realtime_input" && session) {
-            session.sendRealtimeInput({ media: msg.media });
+            await session.sendRealtimeInput({ media: msg.media });
           }
         } catch (e) {
-          console.error("Error parsing WS message:", e);
+          console.error("Error processing WS message:", e);
         }
       });
 
