@@ -21,8 +21,14 @@ export function arrayBufferToBase64(buffer: ArrayBuffer): string {
   let binary = '';
   const bytes = new Uint8Array(buffer);
   const len = bytes.byteLength;
-  for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(bytes[i]);
+  const chunkSize = 0x8000; // 32k chunks to avoid stack overflow
+
+  for (let i = 0; i < len; i += chunkSize) {
+    binary += String.fromCharCode.apply(
+      null,
+      bytes.subarray(i, Math.min(i + chunkSize, len)) as unknown as number[]
+    );
   }
+  
   return typeof window !== 'undefined' ? window.btoa(binary) : btoa(binary);
 }
