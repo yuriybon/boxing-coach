@@ -19,6 +19,8 @@ RUN npm ci --omit=dev
 # Copy built frontend assets
 COPY --from=builder /app/dist ./dist
 
+COPY tsconfig.json ./
+
 # Copy backend code
 COPY server.ts ./
 COPY src/server ./src/server
