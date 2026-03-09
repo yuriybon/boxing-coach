@@ -93,4 +93,16 @@ npm run dev
 -   **Security:**
     -   Secrets are managed via Google Secret Manager in production.
     -   Cookies are configured with `SameSite: none; Secure` when running in iframes (like AI Studio) or production.
--   **Media Handling:** Audio is processed at 16kHz (Gemini requirement). Video frames are sent as base64 JPEG images over WebSockets.
+- **Media Handling:** Audio is processed at 16kHz (Gemini requirement). Video frames are sent as base64 JPEG images over WebSockets.
+
+## Troubleshooting & SDK Notes
+
+### Gemini Live API Connectivity
+- **Root Cause of Abrupt Disconnection:** The model `gemini-2.5-flash-native-audio-preview-09-2025` strictly requires `responseModalities: [Modality.AUDIO]`. Including `Modality.TEXT` in the configuration will cause the Gemini server to immediately terminate the WebSocket connection.
+- **Dual Session Logs:** When transitioning from a 'Concierge' to a 'Coach' session, you will see two "Gemini connection closed" logs. The first is the intentional closure of the Concierge session; the second (if unexpected) usually indicates a configuration error in the new session.
+
+### SDK Migration (@google/genai v1.29.0+)
+- **Tool Schemas:** Use `parametersJsonSchema` instead of `parameters`. Property types must be lowercase (e.g., `type: "string"`, not `type: "STRING"`).
+- **GenerateContent Response:** Access response text via `result.text` rather than `result.response.text()`.
+- **Typing:** The `LiveSession` type is not exported in newer versions. Use `any` or explicit interface matching for session objects.
+

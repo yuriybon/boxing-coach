@@ -10,3 +10,4 @@ prod-verification
 tmp
 *.bak
 test-live.js
+test-config-tools.js

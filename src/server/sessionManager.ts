@@ -1,5 +1,5 @@
 import { WebSocket } from "ws";
-import { GoogleGenAI, Modality, LiveServerMessage } from "@google/genai";
+import { GoogleGenAI, Modality, LiveServerMessage, ActivityHandling, MediaResolution } from "@google/genai";
 import { CONCIERGE_SYS_INSTRUCT, CONCIERGE_TOOLS, COACH_SYS_INSTRUCT_TEMPLATE, STATS_SYS_INSTRUCT } from "./prompts";
 
 export class SessionManager {
@@ -37,6 +37,9 @@ export class SessionManager {
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } },
           },
+          realtimeInputConfig: {
+            activityHandling: ActivityHandling.START_OF_ACTIVITY_INTERRUPTS
+          },
           systemInstruction: CONCIERGE_SYS_INSTRUCT,
           tools: CONCIERGE_TOOLS,
         },
@@ -71,6 +74,10 @@ export class SessionManager {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
             voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } },
+          },
+          mediaResolution: MediaResolution.MEDIA_RESOLUTION_HIGH,
+          realtimeInputConfig: {
+            activityHandling: ActivityHandling.START_OF_ACTIVITY_INTERRUPTS
           },
           systemInstruction: systemInstruction,
         },
@@ -150,6 +157,9 @@ export class SessionManager {
   public async sendRealtimeInput(media: any) {
     if (this.currentSession) {
         try {
+            if (media.mimeType?.startsWith("image/") && Math.random() < 0.05) {
+              console.log(`[Media] Sending image frame (${media.mimeType}) to Gemini...`);
+            }
             await this.currentSession.sendRealtimeInput({ media });
         } catch (e) {
             console.error("Error sending realtime input:", e);
