@@ -3,22 +3,27 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useBoxingCoach } from './hooks/useBoxingCoach';
 import { useAuth } from './hooks/useAuth';
-import { Mic, MicOff, Video, Activity, AlertCircle, LogOut, User as UserIcon } from 'lucide-react';
+import { Mic, MicOff, Video, Activity, AlertCircle, LogOut, User as UserIcon, Settings2 } from 'lucide-react';
 
 export default function App() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { user, isLoading, login, logout } = useAuth();
   const { isConnected, isConnecting, mode, error, connect, disconnect, startTraining } = useBoxingCoach();
 
+  const [noiseSuppression, setNoiseSuppression] = useState(false);
+  const [echoCancellation, setEchoCancellation] = useState(false);
+  const [autoGainControl, setAutoGainControl] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
   const handleToggleConnect = () => {
     if (isConnected || isConnecting) {
       disconnect();
     } else {
       if (videoRef.current) {
-        connect(videoRef.current);
+        connect(videoRef.current, { noiseSuppression, echoCancellation, autoGainControl });
       }
     }
   };
@@ -161,6 +166,38 @@ export default function App() {
                 <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-3 text-red-400 text-sm">
                   <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                   <p>{error}</p>
+                </div>
+              )}
+
+              {!isConnected && (
+                <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden">
+                  <button 
+                    onClick={() => setShowSettings(!showSettings)}
+                    className="w-full px-4 py-3 flex items-center justify-between text-sm uppercase tracking-wider text-zinc-400 hover:text-white hover:bg-zinc-800/50 transition-colors"
+                  >
+                    <span className="flex items-center gap-2"><Settings2 className="w-4 h-4" /> Audio Settings</span>
+                    <span className="text-xs">{showSettings ? 'Hide' : 'Show'}</span>
+                  </button>
+                  
+                  {showSettings && (
+                    <div className="p-4 border-t border-zinc-800 space-y-4 bg-zinc-900/80">
+                      <label className="flex items-center justify-between text-sm cursor-pointer">
+                        <span className="text-zinc-300">Noise Suppression</span>
+                        <input type="checkbox" checked={noiseSuppression} onChange={(e) => setNoiseSuppression(e.target.checked)} className="accent-emerald-500 w-4 h-4 rounded bg-zinc-800 border-zinc-700" />
+                      </label>
+                      <label className="flex items-center justify-between text-sm cursor-pointer">
+                        <span className="text-zinc-300">Echo Cancellation</span>
+                        <input type="checkbox" checked={echoCancellation} onChange={(e) => setEchoCancellation(e.target.checked)} className="accent-emerald-500 w-4 h-4 rounded bg-zinc-800 border-zinc-700" />
+                      </label>
+                      <label className="flex items-center justify-between text-sm cursor-pointer">
+                        <span className="text-zinc-300">Auto Gain Control</span>
+                        <input type="checkbox" checked={autoGainControl} onChange={(e) => setAutoGainControl(e.target.checked)} className="accent-emerald-500 w-4 h-4 rounded bg-zinc-800 border-zinc-700" />
+                      </label>
+                      <p className="text-xs text-zinc-500 leading-relaxed mt-2">
+                        For boxing, keep these <strong>OFF</strong> so the AI can hear your punches hitting the bag. Turn them on only if you have severe background noise or echo issues.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 

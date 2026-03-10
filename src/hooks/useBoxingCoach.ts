@@ -1,6 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { floatTo16BitPCM, base64ToArrayBuffer, arrayBufferToBase64 } from '../lib/audioUtils';
 
+export interface AudioSettings {
+  noiseSuppression: boolean;
+  echoCancellation: boolean;
+  autoGainControl: boolean;
+}
+
 export function useBoxingCoach() {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -17,7 +23,7 @@ export function useBoxingCoach() {
 
   const nextPlayTimeRef = useRef(0);
 
-  const connect = async (videoElement: HTMLVideoElement) => {
+  const connect = async (videoElement: HTMLVideoElement, audioSettings: AudioSettings = { noiseSuppression: false, echoCancellation: false, autoGainControl: false }) => {
     setIsConnecting(true);
     setError(null);
     videoRef.current = videoElement;
@@ -33,8 +39,9 @@ export function useBoxingCoach() {
         audio: {
           sampleRate: 16000,
           channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
+          echoCancellation: audioSettings.echoCancellation,
+          noiseSuppression: audioSettings.noiseSuppression,
+          autoGainControl: audioSettings.autoGainControl,
         },
         video: {
           facingMode: 'user',
