@@ -1,84 +1,73 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { floatTo16BitPCM, base64ToArrayBuffer, arrayBufferToBase64 } from '../lib/audioUtils';
+import { floatTo16BitPCM, base64ToArrayBuffer, arrayBufferToBase64 } from './audioUtils';
 
-export interface AudioSettings {
-  noiseSuppression: boolean;
-  echoCancellation: boolean;
-  autoGainControl: boolean;
+export interface UseGeminiLiveOptions {
+  systemInstruction: string;
+  voiceName?: string;
+  tools?: any[];
+  onMessage?: (message: any) => void;
 }
 
-export function useBoxingCoach() {
+export interface UseGeminiLiveReturn {
+  isConnected: boolean;
+  isConnecting: boolean;
+  connect: () => Promise<void>;
+  disconnect: () => void;
+  sendVideoFrame: (base64Data: string) => void;
+  sendToolResponse: (toolResponses: any[]) => void;
+}
+
+export function useGeminiLive(options: UseGeminiLiveOptions): UseGeminiLiveReturn {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [mode, setMode] = useState<'concierge' | 'coach' | null>(null);
-  const [error, setError] = useState<string | null>(null);
   
   const wsRef = useRef<WebSocket | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const processorRef = useRef<ScriptProcessorNode | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const frameIntervalRef = useRef<number | null>(null);
-
   const nextPlayTimeRef = useRef(0);
 
-  const connect = async (videoElement: HTMLVideoElement, audioSettings: AudioSettings = { noiseSuppression: false, echoCancellation: false, autoGainControl: false }) => {
+  const connect = useCallback(async () => {
+    if (isConnected || isConnecting) return;
     setIsConnecting(true);
-    setError(null);
-    videoRef.current = videoElement;
 
     try {
-      // 1. Check if mediaDevices API is available
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("Your browser or connection does not support camera/microphone access. Ensure you are using HTTPS or localhost.");
-      }
-
-      // 2. Get media permissions
+      // 1. Get Microphone Access
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           sampleRate: 16000,
           channelCount: 1,
-          echoCancellation: audioSettings.echoCancellation,
-          noiseSuppression: audioSettings.noiseSuppression,
-          autoGainControl: audioSettings.autoGainControl,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
         },
-        video: {
-          facingMode: 'user',
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-        }
       });
       mediaStreamRef.current = stream;
-      videoElement.srcObject = stream;
-      await videoElement.play();
 
-      // 3. Setup Audio Context
+      // 2. Setup Audio Context
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContextClass) {
-        throw new Error("Web Audio API is not supported in this browser.");
-      }
-      
-      // On iOS, AudioContext must be resumed within a user gesture
       const audioContext = new AudioContextClass({ sampleRate: 16000 });
       if (audioContext.state === 'suspended') {
         await audioContext.resume();
       }
-      
-      // Unlock audio on iOS by playing a short silent buffer
+      audioContextRef.current = audioContext;
+
+      // Unlock audio on iOS
       const silentBuffer = audioContext.createBuffer(1, 1, 22050);
       const silentSource = audioContext.createBufferSource();
       silentSource.buffer = silentBuffer;
       silentSource.connect(audioContext.destination);
       silentSource.start(0);
-      
-      audioContextRef.current = audioContext;
 
+      // 3. Audio Processing
       const source = audioContext.createMediaStreamSource(stream);
       const processor = audioContext.createScriptProcessor(512, 1, 1);
       processorRef.current = processor;
 
-      // 3. Connect to our Backend via WebSocket
+      source.connect(processor);
+      processor.connect(audioContext.destination); // Required for script processor to run, even if we don't output audio here
+
+      // 4. WebSocket Connection
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       const wsUrl = `${protocol}//${window.location.host}/ws/coach`;
       const ws = new WebSocket(wsUrl);
@@ -87,7 +76,16 @@ export function useBoxingCoach() {
       ws.onopen = () => {
         setIsConnected(true);
         setIsConnecting(false);
-        setMode('concierge');
+
+        // Send initialization config
+        ws.send(JSON.stringify({
+          type: 'start_session',
+          config: {
+            systemInstruction: options.systemInstruction,
+            voiceName: options.voiceName || "Zephyr",
+            tools: options.tools,
+          }
+        }));
 
         // Start sending audio
         processor.onaudioprocess = (e) => {
@@ -101,38 +99,16 @@ export function useBoxingCoach() {
             media: { data: base64Data, mimeType: 'audio/pcm;rate=16000' }
           }));
         };
-        source.connect(processor);
-        processor.connect(audioContextRef.current!.destination);
-
-        // Start sending video frames
-        canvasRef.current = document.createElement('canvas');
-        canvasRef.current.width = 640;
-        canvasRef.current.height = 480;
-        const ctx = canvasRef.current.getContext('2d');
-
-        frameIntervalRef.current = window.setInterval(() => {
-          if (ws.readyState !== WebSocket.OPEN) return;
-          if (videoRef.current && ctx && canvasRef.current) {
-            ctx.drawImage(videoRef.current, 0, 0, 640, 480);
-            const base64Image = canvasRef.current.toDataURL('image/jpeg', 0.5).split(',')[1];
-            
-            ws.send(JSON.stringify({
-              type: 'realtime_input',
-              media: { data: base64Image, mimeType: 'image/jpeg' }
-            }));
-          }
-        }, 1000); // 1 frame per second
       };
 
       ws.onmessage = async (event) => {
         const msg = JSON.parse(event.data);
         
-        // Handle mode change
-        if (msg.type === 'mode_change') {
-          setMode(msg.mode);
+        if (options.onMessage) {
+          options.onMessage(msg);
         }
 
-        // Handle audio output
+        // Handle Audio
         if (msg.type === 'audio') {
           const pcmBuffer = base64ToArrayBuffer(msg.data);
           const int16Array = new Int16Array(pcmBuffer);
@@ -142,45 +118,38 @@ export function useBoxingCoach() {
           }
           await playAudio(float32Array);
         }
-        
-        // Handle interruption
+
+        // Handle Interruption
         if (msg.type === 'interrupted') {
-          nextPlayTimeRef.current = audioContextRef.current?.currentTime || 0;
+          if (audioContextRef.current) {
+             nextPlayTimeRef.current = audioContextRef.current.currentTime;
+          }
         }
-
-        // Handle errors
-        if (msg.type === 'error') {
-          setError(msg.message);
-          disconnect();
-        }
-      };
-
-      ws.onerror = () => {
-        setError("WebSocket connection error");
-        disconnect();
       };
 
       ws.onclose = () => {
         disconnect();
       };
 
-    } catch (err: any) {
+      ws.onerror = (e) => {
+        console.error("WebSocket error:", e);
+        disconnect();
+      };
+
+    } catch (err) {
       console.error("Connection failed:", err);
-      setError(err.message || "Failed to connect to camera/microphone");
-      setIsConnecting(false);
       disconnect();
     }
-  };
+  }, [isConnected, isConnecting, options]);
 
   const playAudio = async (audioData: Float32Array) => {
     if (!audioContextRef.current) return;
     
-    // Ensure context is running (iOS Safari requirement)
     if (audioContextRef.current.state === 'suspended') {
       await audioContextRef.current.resume();
     }
     
-    const audioBuffer = audioContextRef.current.createBuffer(1, audioData.length, 24000);
+    const audioBuffer = audioContextRef.current.createBuffer(1, audioData.length, 24000); // Gemini output is 24kHz
     audioBuffer.getChannelData(0).set(audioData);
 
     const source = audioContextRef.current.createBufferSource();
@@ -196,12 +165,6 @@ export function useBoxingCoach() {
     nextPlayTimeRef.current += audioBuffer.duration;
   };
 
-  const startTraining = useCallback(() => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'start_training' }));
-    }
-  }, []);
-
   const disconnect = useCallback(() => {
     if (wsRef.current) {
       wsRef.current.close();
@@ -212,36 +175,42 @@ export function useBoxingCoach() {
       processorRef.current = null;
     }
     if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current.getTracks().forEach(t => t.stop());
       mediaStreamRef.current = null;
     }
     if (audioContextRef.current) {
       audioContextRef.current.close();
       audioContextRef.current = null;
     }
-    if (frameIntervalRef.current) {
-      clearInterval(frameIntervalRef.current);
-      frameIntervalRef.current = null;
-    }
     setIsConnected(false);
     setIsConnecting(false);
-    setMode(null);
     nextPlayTimeRef.current = 0;
   }, []);
 
-  useEffect(() => {
-    return () => {
-      disconnect();
-    };
-  }, [disconnect]);
+  const sendVideoFrame = useCallback((base64Data: string) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'realtime_input',
+        media: { data: base64Data, mimeType: 'image/jpeg' }
+      }));
+    }
+  }, []);
+
+  const sendToolResponse = useCallback((toolResponses: any[]) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({
+        type: 'tool_response',
+        toolResponses
+      }));
+    }
+  }, []);
 
   return {
     isConnected,
     isConnecting,
-    mode,
-    error,
     connect,
     disconnect,
-    startTraining,
+    sendVideoFrame,
+    sendToolResponse
   };
 }

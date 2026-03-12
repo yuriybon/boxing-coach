@@ -79,10 +79,15 @@ npm run dev
 ## Key Files and Directories
 
 -   **`server.ts`**: The main entry point. Sets up Express, WebSocket server, OAuth, and Gemini API connection.
--   **`src/App.tsx`**: Main frontend component. Handles UI layout and connects `useAuth` and `useBoxingCoach` hooks.
--   **`src/hooks/useBoxingCoach.ts`**: Core logic for media capture (Web Audio API, Canvas for video frames) and WebSocket communication with the backend.
+-   **`src/App.tsx`**: Main frontend component. Handles UI layout and connects `useAuth` hooks, now orchestrating a three-screen flow.
+-   **`src/lib/useGeminiLive.ts`**: New custom hook for WebSocket communication with the backend, allowing dynamic configuration of Gemini sessions.
 -   **`src/hooks/useAuth.ts`**: Manages user authentication state.
 -   **`src/lib/audioUtils.ts`**: Utilities for PCM audio conversion (Float32 <-> Int16).
+-   **`src/components/store.ts`**: Defines application-wide types (`AppScreen`, `TrainingConfig`, `SessionStats`) and constants for trainer personalities and training plans.
+-   **`src/components/Concierge.tsx`**: New UI-driven component for session setup, allowing users to visually select trainers, plans, and duration.
+-   **`src/components/Training.tsx`**: Component for executing the live AI training session, now receiving dynamic configurations.
+-   **`src/components/Analysis.tsx`**: Component for displaying post-training session statistics and AI feedback.
+-   **`src/server/sessionManager.ts`**: Backend session manager, updated to dynamically configure Gemini Live sessions based on client requests and proxy tool calls/responses.
 -   **`Dockerfile`**: Configuration for containerizing the application.
 
 ## Development Conventions
@@ -105,4 +110,3 @@ npm run dev
 - **Tool Schemas:** Use `parametersJsonSchema` instead of `parameters`. Property types must be lowercase (e.g., `type: "string"`, not `type: "STRING"`).
 - **GenerateContent Response:** Access response text via `result.text` rather than `result.response.text()`.
 - **Typing:** The `LiveSession` type is not exported in newer versions. Use `any` or explicit interface matching for session objects.
-
