@@ -1,14 +1,15 @@
 import { Activity, ShieldAlert, Timer, Zap } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useGeminiLive } from "../lib/useGeminiLive";
-import { TrainingConfig } from "../store";
+import { TrainingConfig, SessionStats } from "./store";
 
 interface AnalysisProps {
   config: TrainingConfig;
+  stats: SessionStats;
   onRestart: () => void;
 }
 
-export function Analysis({ config, onRestart }: AnalysisProps) {
+export function Analysis({ config, stats, onRestart }: AnalysisProps) {
   const [timeLeft, setTimeLeft] = useState(60); // 60-second break
 
   const [hasStarted, setHasStarted] = useState(false);
@@ -17,6 +18,11 @@ export function Analysis({ config, onRestart }: AnalysisProps) {
     systemInstruction: `You are an elite AI Boxing Cornerman and Analytics Agent speaking to your fighter during a 60-second break between rounds.
     
     The fighter just completed a round with the following plan: ${config.plan}.
+    
+    PERFORMANCE STATS:
+    - Duration: ${Math.floor(stats.durationSeconds)} seconds
+    - Punches Thrown (Approx): ${stats.punchesThrown}
+    - Calories Burned (Approx): ${stats.caloriesBurned}
     
     Your job is to deliver clear, actionable feedback based on biomechanical observations and audio/video data from the previous round.
     Focus on:
@@ -98,7 +104,7 @@ export function Analysis({ config, onRestart }: AnalysisProps) {
               <ShieldAlert className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-2xl font-bold">85%</div>
+              <div className="text-2xl font-bold">--</div>
               <div className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
                 Guard Uptime
               </div>
@@ -110,7 +116,7 @@ export function Analysis({ config, onRestart }: AnalysisProps) {
               <Activity className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-2xl font-bold">142</div>
+              <div className="text-2xl font-bold">{stats.punchesThrown}</div>
               <div className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
                 Punches Thrown
               </div>
@@ -122,9 +128,9 @@ export function Analysis({ config, onRestart }: AnalysisProps) {
               <Zap className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-2xl font-bold">280ms</div>
+              <div className="text-2xl font-bold">{stats.caloriesBurned}</div>
               <div className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
-                Avg Reaction
+                Calories Burned
               </div>
             </div>
           </div>
@@ -134,9 +140,11 @@ export function Analysis({ config, onRestart }: AnalysisProps) {
               <Timer className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-2xl font-bold">92%</div>
+              <div className="text-2xl font-bold">
+                {Math.floor(stats.durationSeconds / 60)}:{Math.floor(stats.durationSeconds % 60).toString().padStart(2, '0')}
+              </div>
               <div className="text-xs text-zinc-500 uppercase tracking-wider font-semibold">
-                Pace Consistency
+                Duration
               </div>
             </div>
           </div>

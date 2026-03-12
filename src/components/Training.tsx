@@ -1,11 +1,11 @@
 import { Camera, Mic, Square } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useGeminiLive } from "../lib/useGeminiLive";
-import { TrainingConfig } from "../store";
+import { TrainingConfig, SessionStats } from "./store";
 
 interface TrainingProps {
   config: TrainingConfig;
-  onFinish: () => void;
+  onFinish: (stats: SessionStats) => void;
 }
 
 export function Training({ config, onFinish }: TrainingProps) {
@@ -13,6 +13,7 @@ export function Training({ config, onFinish }: TrainingProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [timeLeft, setTimeLeft] = useState(config.duration);
   const [isRoundActive, setIsRoundActive] = useState(false);
+  const startTimeRef = useRef<number>(0);
 
   const { connect, disconnect, isConnected, isConnecting, sendVideoFrame } =
     useGeminiLive({
@@ -84,8 +85,7 @@ export function Training({ config, onFinish }: TrainingProps) {
     if (!isRoundActive) return;
 
     if (timeLeft <= 0) {
-      disconnect();
-      onFinish();
+      handleStop();
       return;
     }
 
@@ -94,17 +94,30 @@ export function Training({ config, onFinish }: TrainingProps) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isRoundActive, timeLeft, disconnect, onFinish]);
+  }, [isRoundActive, timeLeft]);
 
   const handleStart = () => {
     connect();
     setIsRoundActive(true);
+    startTimeRef.current = Date.now();
   };
 
   const handleStop = () => {
     disconnect();
     setIsRoundActive(false);
-    onFinish();
+    
+    const durationSeconds = (Date.now() - startTimeRef.current) / 1000;
+    
+    // Simulate some stats since we don't have real sensors yet
+    // In a real app, these would come from the backend analysis or wearable data
+    const estimatedPunches = Math.floor(durationSeconds * 0.8); // Approx 0.8 punches per second
+    const estimatedCalories = Math.floor(durationSeconds * 0.15); // Approx 9 calories per minute
+
+    onFinish({
+      durationSeconds,
+      punchesThrown: estimatedPunches,
+      caloriesBurned: estimatedCalories,
+    });
   };
 
   const formatTime = (seconds: number) => {

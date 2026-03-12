@@ -286,16 +286,21 @@ async function startServer() {
     const sessionManager = new SessionManager(ws, ai);
 
     try {
-      await sessionManager.start();
+      // sessionManager.start() is removed; we wait for client configuration
 
       // Handle incoming messages from frontend (audio/video frames)
       ws.on("message", async (data) => {
         try {
           const msg = JSON.parse(data.toString());
+          
           if (msg.type === "realtime_input") {
             await sessionManager.sendRealtimeInput(msg.media);
-          } else if (msg.type === "start_training") {
-            await sessionManager.startHardTraining();
+          } else if (msg.type === "start_session") {
+            console.log("Received start_session request");
+            await sessionManager.startSession(msg.config);
+          } else if (msg.type === "tool_response") {
+            console.log("Received tool_response");
+            await sessionManager.sendToolResponse(msg.toolResponses);
           }
         } catch (e) {
           console.error("Error processing WS message:", e);
