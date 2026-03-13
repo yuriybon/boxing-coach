@@ -97,7 +97,7 @@ npm run dev
 -   **State Management:** Prefer React Hooks (custom hooks for complex logic) over global state libraries for this scale.
 -   **Security:**
     -   Secrets are managed via Google Secret Manager in production.
-    -   Cookies are configured with `SameSite: none; Secure` when running in iframes (like AI Studio) or production.
+    -   Cookies are configured with `SameSite: none; Secure` when running in iframes production.
 - **Media Handling:** Audio is processed at 16kHz (Gemini requirement). Video frames are sent as base64 JPEG images over WebSockets.
 
 ## Troubleshooting & SDK Notes

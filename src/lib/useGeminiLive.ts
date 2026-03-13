@@ -6,6 +6,10 @@ export interface UseGeminiLiveOptions {
   voiceName?: string;
   tools?: any[];
   onMessage?: (message: any) => void;
+  audioSettings?: {
+    noiseSuppression: boolean;
+    echoCancellation: boolean;
+  };
 }
 
 export interface UseGeminiLiveReturn {
@@ -37,8 +41,8 @@ export function useGeminiLive(options: UseGeminiLiveOptions): UseGeminiLiveRetur
         audio: {
           sampleRate: 16000,
           channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
+          echoCancellation: options.audioSettings?.echoCancellation ?? true,
+          noiseSuppression: options.audioSettings?.noiseSuppression ?? true,
           autoGainControl: true,
         },
       });
