@@ -1,4 +1,4 @@
-import { Play, User, Dumbbell, Clock, Zap } from "lucide-react";
+import { Play, User, Dumbbell, Clock, Zap, Mic } from "lucide-react";
 import { useState } from "react";
 import { TRAINING_PLANS, TRAINER_PERSONALITIES, TrainingConfig } from "./store";
 
@@ -10,6 +10,8 @@ export function Concierge({ onStartRound }: ConciergeProps) {
   const [selectedTrainerId, setSelectedTrainerId] = useState<string>(TRAINER_PERSONALITIES[0].id);
   const [selectedPlanId, setSelectedPlanId] = useState<string>(TRAINING_PLANS[0].id);
   const [duration, setDuration] = useState<number>(180); // Default 3 minutes
+  const [noiseSuppression, setNoiseSuppression] = useState<boolean>(false);
+  const [echoCancellation, setEchoCancellation] = useState<boolean>(false);
 
   const handleStart = () => {
     const trainer = TRAINER_PERSONALITIES.find((t) => t.id === selectedTrainerId)!;
@@ -24,6 +26,8 @@ export function Concierge({ onStartRound }: ConciergeProps) {
       planName: plan.name,
       plan: plan.plan,
       duration: duration,
+      noiseSuppression: noiseSuppression,
+      echoCancellation: echoCancellation,
     };
 
     onStartRound(config);
@@ -149,6 +153,36 @@ export function Concierge({ onStartRound }: ConciergeProps) {
                 <div className="flex justify-between text-xs text-zinc-600 font-mono mt-2">
                   <span>30s</span>
                   <span>10m</span>
+                </div>
+              </div>
+            </section>
+
+             {/* Audio Settings Selection */}
+             <section>
+              <div className="flex items-center gap-2 mb-4 text-emerald-500">
+                <Mic className="w-5 h-5" />
+                <h2 className="font-bold uppercase tracking-wider text-sm">Audio Settings</h2>
+              </div>
+              <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-zinc-200">Noise Suppression</h3>
+                    <p className="text-xs text-zinc-500">Filters background noise (disable for raw punch sounds)</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={noiseSuppression} onChange={(e) => setNoiseSuppression(e.target.checked)} />
+                    <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                  </label>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-zinc-200">Echo Cancellation</h3>
+                    <p className="text-xs text-zinc-500">Prevents audio feedback</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" className="sr-only peer" checked={echoCancellation} onChange={(e) => setEchoCancellation(e.target.checked)} />
+                    <div className="w-11 h-6 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                  </label>
                 </div>
               </div>
             </section>

@@ -57,4 +57,4 @@ npm run dev
 4. Установите переменную окружения `APP_URL` в настройках Cloud Run.
 
 ## 🔒 Безопасность
-Приложение использует `SameSite: none` и `Secure` куки для работы внутри iframe (AI Studio) и корректно обрабатывает `trust proxy` для работы в облаке Google.
+Приложение использует `SameSite: none` и `Secure` куки для работы внутри iframe и корректно обрабатывает `trust proxy` для работы в облаке Google.

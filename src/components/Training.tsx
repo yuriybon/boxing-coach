@@ -36,6 +36,10 @@ export function Training({ config, onFinish }: TrainingProps) {
     
     Start the round immediately by announcing the plan and telling them to get ready.`,
       voiceName: config.voiceName, // A different voice for the trainer
+      audioSettings: {
+        noiseSuppression: config.noiseSuppression,
+        echoCancellation: config.echoCancellation,
+      },
     });
 
   // Start webcam

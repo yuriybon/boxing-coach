@@ -17,6 +17,8 @@ export interface TrainingConfig {
   plan: string;
   duration: number; // in seconds
   systemInstructionOverride?: string;
+  noiseSuppression: boolean;
+  echoCancellation: boolean;
 }
 
 export const TRAINER_PERSONALITIES = [
@@ -212,4 +214,6 @@ export const DEFAULT_CONFIG: TrainingConfig = {
   planName: TRAINING_PLANS[0].name,
   plan: TRAINING_PLANS[0].plan,
   duration: 180,
+  noiseSuppression: false,
+  echoCancellation: false,
 };

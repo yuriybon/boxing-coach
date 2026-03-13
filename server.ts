@@ -117,7 +117,7 @@ async function startServer() {
     return `http://localhost:${PORT}/api/auth/google/callback`;
   };
 
-  // Session configuration for AI Studio iframe
+  // Session configuration for  iframe
   const isProduction = process.env.NODE_ENV === "production";
   const baseUrl = process.env.APP_URL || `http://localhost:${PORT}`;
   const isLocalhost = baseUrl.includes("localhost") || baseUrl.includes("127.0.0.1");
@@ -128,7 +128,7 @@ async function startServer() {
 
   app.use((req, res, next) => {
     // Dynamically determine SameSite based on context
-    // If we're in an iframe (like AI Studio), we need 'none'
+    // If we're in an iframe, we need 'none'
     // If we're on mobile or direct access, 'lax' is more compatible
     const isIframe = req.headers["sec-fetch-dest"] === "iframe" || 
                      req.headers["referer"]?.includes("aistudio.google.com");
