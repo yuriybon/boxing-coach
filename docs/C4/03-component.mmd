@@ -1,0 +1,30 @@
+graph TD
+    %% Define C4-like styles
+    classDef container fill:#438dd5,stroke:#3c7fc0,color:white,font-weight:bold
+    classDef component fill:#85bbf0,stroke:#78a8d8,color:black,font-weight:bold
+
+    subgraph SPA [Single-Page Application Container]
+        AppUI["App UI & Routing<br/>[React]<br/>(Manages screens)"]:::component
+        MediaCapture["Media Capture Hooks<br/>[React]<br/>(Accesses camera/mic)"]:::component
+        WSClient["WebSocket Client<br/>[useGeminiLive]<br/>(Bidirectional WSS)"]:::component
+        AudioUtils["Audio Utilities<br/>[TypeScript]<br/>(Converts PCM audio)"]:::component
+        
+        AppUI -->|"Uses for training"| MediaCapture
+        AppUI -->|"Initiates session"| WSClient
+        MediaCapture -->|"Pipes A/V data"| WSClient
+        WSClient -->|"Formats audio"| AudioUtils
+    end
+
+    subgraph Backend [API & WebSocket Server Container]
+        ServerTS["Express App (server.ts)<br/>[Node.js]<br/>(Entry point)"]:::component
+        AuthRoutes["Auth Controller<br/>[Express Routes]<br/>(OAuth callbacks)"]:::component
+        SessionMgr["Session Manager<br/>[TypeScript]<br/>(Manages WSS lifecycle)"]:::component
+        ConfigLoader["Config Loader<br/>[TypeScript]<br/>(Fetches secrets)"]:::component
+
+        ServerTS -->|"Delegates auth"| AuthRoutes
+        ServerTS -->|"Passes WS connections"| SessionMgr
+        ServerTS -->|"Loads secrets"| ConfigLoader
+    end
+
+    WSClient ==>|"Connects to /ws/coach<br/>[WebSockets]"| SessionMgr
+    AppUI -.->|"Initiates login<br/>[HTTPS]"| AuthRoutes

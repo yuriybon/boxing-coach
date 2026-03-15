@@ -2,22 +2,32 @@
 
 The System Context diagram provides a high-level overview of the Cornerman AI system, the user interacting with it, and the external systems it depends on.
 
+
 ```mermaid
-C4Context
-    title System Context diagram for Cornerman AI
-    
-    Person(user, "User (Boxer)", "A person who wants to train boxing and get real-time feedback.")
-    
-    System(cornerman, "Cornerman AI", "Real-time multimodal boxing coach application providing voice feedback based on video/audio streams.")
-    
-    System_Ext(gemini, "Gemini Live API", "Google's multimodal AI providing real-time analysis and voice coaching.")
-    System_Ext(oauth, "Google OAuth 2.0", "Authentication provider for secure login.")
-    System_Ext(secretManager, "Google Secret Manager", "Securely stores application secrets and credentials.")
-    
-    Rel_D(user, cornerman, "Trains using, streams audio & video to", "Web Browser")
-    Rel_D(cornerman, gemini, "Streams real-time A/V, receives audio feedback", "WebSockets")
-    Rel_R(cornerman, oauth, "Authenticates users via", "HTTPS")
-    Rel_L(cornerman, secretManager, "Retrieves credentials securely", "HTTPS/GCP")
+graph TD
+    %% Define C4-like styles
+    classDef person fill:#08427b,stroke:#073b6e,color:white,font-weight:bold
+    classDef system fill:#1168bd,stroke:#0b4884,color:white,font-weight:bold
+    classDef external fill:#999999,stroke:#666666,color:white,font-weight:bold
+    %% Nodes
+    User["User (Boxer)<br/>(A person who wants to train)"]:::person
+    Cornerman["Cornerman AI<br/>(Real-time coaching system)"]:::system
+
+       subgraph External_Systems [External Dependencies]
+           direction LR
+           Gemini["Gemini Live API<br/>(AI Analysis)"]:::external
+           OAuth["Google OAuth 2.0<br/>(Auth)"]:::external
+           SecretManager["Google Secret Manager<br/>(Secrets)"]:::external
+       end
+
+       %% Relationships
+       User -- "Streams A/V via Browser" --> Cornerman
+       Cornerman -- "HTTPS Auth" --> OAuth
+       Cornerman -- "WSS Proxy" --> Gemini
+       Cornerman -- "GCP API" --> SecretManager
+
+       %% Layout Hints
+       %% This ensures User is at the top, Cornerman in middle, and Externals are grouped
 ```
 
 ## Elements

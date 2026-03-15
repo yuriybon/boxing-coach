@@ -1,0 +1,22 @@
+graph TD
+    %% Define C4-like styles
+    classDef person fill:#08427b,stroke:#073b6e,color:white,font-weight:bold
+    classDef system fill:#1168bd,stroke:#0b4884,color:white,font-weight:bold
+    classDef external fill:#999999,stroke:#666666,color:white,font-weight:bold
+
+    %% Nodes
+    User["User (Boxer)<br/>(A person who wants to train)"]:::person
+    Cornerman["Cornerman AI<br/>(Real-time coaching system)"]:::system
+    
+    subgraph External_Systems [External Dependencies]
+        direction LR
+        Gemini["Gemini Live API<br/>(AI Analysis)"]:::external
+        OAuth["Google OAuth 2.0<br/>(Auth)"]:::external
+        SecretManager["Google Secret Manager<br/>(Secrets)"]:::external
+    end
+
+    %% Relationships
+    User -- "Streams A/V via Browser" --> Cornerman
+    Cornerman -- "HTTPS Auth" --> OAuth
+    Cornerman -- "WSS Proxy" --> Gemini
+    Cornerman -- "GCP API" --> SecretManager

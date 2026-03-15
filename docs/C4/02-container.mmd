@@ -1,0 +1,28 @@
+graph TD
+    %% Define C4-like styles
+    classDef person fill:#08427b,stroke:#073b6e,color:white,font-weight:bold
+    classDef system fill:#1168bd,stroke:#0b4884,color:white,font-weight:bold
+    classDef container fill:#438dd5,stroke:#3c7fc0,color:white,font-weight:bold
+    classDef external fill:#999999,stroke:#666666,color:white,font-weight:bold
+
+    User["User (Boxer)<br/>(Trains and receives feedback)"]:::person
+
+    subgraph Cornerman_System [Cornerman AI System]
+        SPA["Single-Page Application<br/>[React, Vite, Tailwind]<br/>(UI, captures A/V, plays audio)"]:::container
+        Backend["API & WebSocket Server<br/>[Node.js, Express]<br/>(Serves SPA, Auth, WSS Proxy)"]:::container
+    end
+
+    subgraph External_Systems [External Dependencies]
+        direction LR
+        OAuth["Google OAuth 2.0<br/>(Identity Provider)"]:::external
+        SecretManager["Google Secret Manager<br/>(Secrets store)"]:::external
+        Gemini["Gemini Live API<br/>(Provides real-time AI coaching)"]:::external
+    end
+
+    User -- "Visits, allows A/V access<br/>[HTTPS]" --> SPA
+    SPA -- "Authenticates & fetches info<br/>[HTTPS]" --> Backend
+    SPA -- "Streams A/V & receives coaching<br/>[WSS]" --> Backend
+    
+    Backend -- "Validates tokens<br/>[HTTPS]" --> OAuth
+    Backend -- "Fetches keys at startup<br/>[HTTPS]" --> SecretManager
+    Backend -- "Proxies stream<br/>[WSS]" --> Gemini
