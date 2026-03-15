@@ -62,3 +62,7 @@ The application is completely ready for deployment via Cloud Build:
 
 ## 🔒 Security
 The application uses `SameSite: none` and `Secure` cookies to work within an iframe and correctly handles `trust proxy` for working in the Google Cloud environment.
+
+
+## !!! Special Notes
+⚠️ IMPORTANT: This version is optimised for use with a punching bag in a gym. Punch impacts are used as natural triggers to advance the coaching flow. If you are testing without a punching bag, you can trigger the next turn by saying "next" or by repeating the last combination back to the coach.
