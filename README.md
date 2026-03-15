@@ -18,6 +18,10 @@
 -   **Auth**: Google OAuth 2.0 + `cookie-session`.
 -   **Infrastructure**: Docker, Google Cloud Run, Google Cloud Build.
 
+## 🏗 Architecture
+
+Detailed architectural documentation, including C4 Model diagrams, can be found in the **[docs folder](./docs/README.md)**.
+
 ## 🚀 Quick Start
 
 ### 1. Requirements
