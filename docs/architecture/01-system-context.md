@@ -3,6 +3,7 @@
 The System Context diagram provides a high-level overview of the Cornerman AI system, the user interacting with it, and the external systems it depends on.
 
 ```mermaid
+%%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%
 C4Context
     title System Context diagram for Cornerman AI
     
@@ -14,9 +15,12 @@ C4Context
     System_Ext(oauth, "Google OAuth 2.0", "Authentication provider for secure login.")
     System_Ext(secretManager, "Google Secret Manager", "Securely stores application secrets and credentials.")
     
-    Rel_D(user, cornerman, "Trains using, streams audio & video to", "Web Browser")
-    Rel_D(cornerman, gemini, "Streams real-time A/V, receives audio feedback", "WebSockets")
-    Rel_R(cornerman, oauth, "Authenticates users via", "HTTPS")
+    %% ШАГ 1: Сначала строим "вертикальный хребет" (Пользователь -> AI -> OAuth)
+    Rel_D(user, cornerman,  "Trains using, streams audio & video to", "Web Browser")
+    Rel_D(cornerman, oauth, "Authenticates users via", "HTTPS")
+    
+    %% ШАГ 2: Затем добавляем боковые зависимости (Gemini и Secret Manager)
+    Rel_R(cornerman, gemini, "Streams real-time A/V, receives audio feedback", "WebSockets")
     Rel_L(cornerman, secretManager, "Retrieves credentials securely", "HTTPS/GCP")
 ```
 
