@@ -12,6 +12,10 @@ We use the [C4 Model](https://c4model.com/) to describe the architecture at diff
    Zooms into the system to show the high-level technical building blocks (containers) and how they interact.
 3. **[Level 3: Component](./architecture/03-component.md)**
    Zooms into individual containers to show the components inside them.
+4. **[Sequence: Authentication Flow](./architecture/04-sequence-auth.md)**
+   Shows the step-by-step Google OAuth 2.0 login process.
+5. **[Sequence: Live Training Session](./architecture/05-sequence-training.md)**
+   Details the real-time bidirectional media streaming flow using WebSockets and the Gemini Live API.
 
 ## Overview
 

@@ -14,10 +14,10 @@ C4Context
     System_Ext(oauth, "Google OAuth 2.0", "Authentication provider for secure login.")
     System_Ext(secretManager, "Google Secret Manager", "Securely stores application secrets and credentials.")
     
-    Rel(user, cornerman, "Trains using, streams audio & video to", "Web Browser")
-    Rel(cornerman, gemini, "Streams real-time A/V, receives audio feedback", "WebSockets")
-    Rel(cornerman, oauth, "Authenticates users via", "HTTPS")
-    Rel(cornerman, secretManager, "Retrieves credentials securely", "HTTPS/GCP")
+    Rel_D(user, cornerman, "Trains using, streams audio & video to", "Web Browser")
+    Rel_D(cornerman, gemini, "Streams real-time A/V, receives audio feedback", "WebSockets")
+    Rel_R(cornerman, oauth, "Authenticates users via", "HTTPS")
+    Rel_L(cornerman, secretManager, "Retrieves credentials securely", "HTTPS/GCP")
 ```
 
 ## Elements

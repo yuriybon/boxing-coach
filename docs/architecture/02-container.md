@@ -17,13 +17,13 @@ C4Container
         Container(backend, "API & WebSocket Server", "Node.js, Express", "Serves the SPA, handles OAuth flow, and manages the secure WebSocket proxy to Gemini.")
     }
 
-    Rel(user, spa, "Visits, allows camera/mic access", "HTTPS")
-    Rel(spa, backend, "Authenticates and fetches user info", "HTTPS")
-    Rel(spa, backend, "Streams audio/video and receives coaching", "WebSockets (WSS)")
+    Rel_D(user, spa, "Visits, allows camera/mic access", "HTTPS")
+    Rel_D(spa, backend, "Authenticates and fetches user info", "HTTPS")
+    Rel_D(spa, backend, "Streams audio/video and receives coaching", "WebSockets (WSS)")
     
-    Rel(backend, oauth, "Validates tokens, gets user info", "HTTPS")
-    Rel(backend, secretManager, "Fetches keys at startup", "HTTPS")
-    Rel(backend, gemini, "Proxies stream to AI model", "WebSockets (WSS)")
+    Rel_R(backend, oauth, "Validates tokens, gets user info", "HTTPS")
+    Rel_L(backend, secretManager, "Fetches keys at startup", "HTTPS")
+    Rel_D(backend, gemini, "Proxies stream to AI model", "WebSockets (WSS)")
 ```
 
 ## Containers
