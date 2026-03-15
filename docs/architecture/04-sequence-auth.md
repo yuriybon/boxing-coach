@@ -2,38 +2,7 @@
 
 This diagram illustrates the Google OAuth 2.0 authentication process for Cornerman AI.
 
-```mermaid
-sequenceDiagram
-    autonumber
-    
-    actor User as User (Boxer)
-    participant SPA as Single-Page Application
-    participant API as Node.js Backend (/api/auth)
-    participant Google as Google OAuth 2.0
-    
-    User->>SPA: Clicks "Sign in with Google"
-    SPA->>API: GET /api/auth/google/url
-    API->>Google: Generate Auth URL
-    Google-->>API: Returns Authorization URL
-    API-->>SPA: Returns URL (JSON)
-    SPA->>User: Opens Popup/Redirects to Google
-    
-    User->>Google: Logs in and grants permissions
-    Google->>API: Redirects to /api/auth/google/callback?code=...
-    
-    API->>Google: Exchange 'code' for Tokens
-    Google-->>API: Returns Access Token & ID Token
-    
-    API->>Google: Verify ID Token
-    Google-->>API: Returns User Profile Data
-    
-    API->>API: Create Encrypted Cookie Session (cookie-session)
-    API-->>SPA: Returns Success HTML Page
-    
-    SPA->>API: GET /api/auth/me (with secure cookie)
-    API-->>SPA: Returns User Data
-    SPA->>User: Shows Authenticated UI (Concierge/Training)
-```
+[View Diagram](../C4/04-sequence-auth.mmd)
 
 ## Description
 

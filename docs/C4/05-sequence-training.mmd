@@ -1,0 +1,33 @@
+sequenceDiagram
+    autonumber
+    
+    actor User as User (Boxer)
+    participant SPA as SPA (useGeminiLive hook)
+    participant API as Node.js Backend (SessionManager)
+    participant Gemini as Gemini Live API
+    
+    User->>SPA: Starts Training Session
+    SPA->>SPA: Requests Camera & Mic Access
+    SPA->>API: Connects to wss://[host]/ws/coach
+    API-->>SPA: Connection Accepted
+    
+    SPA->>API: {"type": "start_session", "config": {...}}
+    API->>Gemini: Establishes WS Connection
+    API->>Gemini: Sends System Instructions & Tools
+    Gemini-->>API: Session Initialized
+    
+    loop Real-time Streaming
+        SPA->>SPA: Captures Video Frame & Audio Chunk
+        SPA->>API: {"type": "realtime_input", "media": {"mimeType": "...", "data": "base64..."}}
+        API->>Gemini: Proxies Media Payload
+        
+        Note right of Gemini: Gemini Analyzes Multimodal Data
+        
+        Gemini-->>API: LiveServerMessage (Audio/Text Response)
+        API-->>SPA: Proxies Message
+        SPA->>User: Plays Audio Feedback / Shows UI Update
+    end
+    
+    User->>SPA: Ends Session
+    SPA->>API: Closes WS Connection
+    API->>Gemini: Closes Downstream Connection

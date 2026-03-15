@@ -1,0 +1,28 @@
+C4Component
+    title Component diagram for Cornerman AI - Backend & SPA
+
+    Container_Boundary(spa, "Single-Page Application") {
+        Component(app_ui, "App UI & Routing", "React Components", "Manages screens: Concierge, Training, Analysis.")
+        Component(media_capture, "Media Capture Hooks", "React Hooks", "Accesses camera and microphone via browser APIs.")
+        Component(ws_client, "WebSocket Client", "Custom Hook (useGeminiLive)", "Handles bidirectional real-time communication with the backend.")
+        Component(audio_utils, "Audio Utilities", "TypeScript", "Converts PCM audio (Float32 <-> Int16) for Gemini compatibility.")
+        
+        Rel(app_ui, media_capture, "Uses for training")
+        Rel(app_ui, ws_client, "Initiates coaching session")
+        Rel(media_capture, ws_client, "Pipes A/V data")
+        Rel(ws_client, audio_utils, "Formats audio for transport")
+    }
+
+    Container_Boundary(backend, "API & WebSocket Server") {
+        Component(server_ts, "Express App (server.ts)", "Node.js/Express", "Entry point, middleware, static serving.")
+        Component(auth_routes, "Auth Controller", "Express Routes", "Handles Google OAuth callbacks and token exchange.")
+        Component(session_manager, "Session Manager", "TypeScript Class", "Manages the WebSocket lifecycle between the SPA and Gemini API.")
+        Component(config_loader, "Config Loader", "TypeScript", "Fetches from Google Secret Manager on startup.")
+
+        Rel(server_ts, auth_routes, "Delegates auth requests")
+        Rel(server_ts, session_manager, "Passes WS connections")
+        Rel(server_ts, config_loader, "Loads secrets at startup")
+    }
+
+    Rel(ws_client, session_manager, "Connects to (/ws/coach)", "WebSockets")
+    Rel(app_ui, auth_routes, "Initiates login", "HTTPS")

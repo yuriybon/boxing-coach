@@ -1,0 +1,21 @@
+C4Container
+    title Container diagram for Cornerman AI
+
+    Person(user, "User (Boxer)", "Trains and receives feedback")
+
+    System_Ext(gemini, "Gemini Live API", "Provides real-time AI coaching")
+    System_Ext(oauth, "Google OAuth 2.0", "Identity Provider")
+    System_Ext(secretManager, "Google Secret Manager", "Secrets store")
+
+    System_Boundary(c1, "Cornerman AI") {
+        Container(spa, "Single-Page Application", "React, Vite, Tailwind", "Provides the user interface, captures camera/mic, and plays audio feedback.")
+        Container(backend, "API & WebSocket Server", "Node.js, Express", "Serves the SPA, handles OAuth flow, and manages the secure WebSocket proxy to Gemini.")
+    }
+
+    Rel_D(user, spa, "Visits, allows camera/mic access", "HTTPS")
+    Rel_D(spa, backend, "Authenticates and fetches user info", "HTTPS")
+    Rel_D(spa, backend, "Streams audio/video and receives coaching", "WebSockets (WSS)")
+    
+    Rel_R(backend, oauth, "Validates tokens, gets user info", "HTTPS")
+    Rel_L(backend, secretManager, "Fetches keys at startup", "HTTPS")
+    Rel_D(backend, gemini, "Proxies stream to AI model", "WebSockets (WSS)")
