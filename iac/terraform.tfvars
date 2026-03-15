@@ -1,0 +1,6 @@
+project_id        = "boxing-coach-gcp-project-id"
+project_number    = "boxing-coach-gcp-project-number"
+region            = "europe-west1"
+github_owner      = "boxing-coach-github-username"
+github_repo       = "boxing-coach-github-repo"
+state_bucket_name = "boxing-coach-terraform-state-bucket-name"
