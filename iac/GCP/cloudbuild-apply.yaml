@@ -1,0 +1,29 @@
+steps:
+  - id: 'terraform-init'
+    name: 'hashicorp/terraform:1.7'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - 'terraform init -no-color'
+    dir: 'iac/'
+
+  - id: 'terraform-plan'
+    name: 'hashicorp/terraform:1.7'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - 'terraform plan -no-color -out=tfplan'
+    dir: 'iac/'
+
+  - id: 'terraform-apply'
+    name: 'hashicorp/terraform:1.7'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - 'terraform apply -no-color -auto-approve tfplan'
+    dir: 'iac/'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+serviceAccount: 'projects/$PROJECT_ID/serviceAccounts/terraform-builder@$PROJECT_ID.iam.gserviceaccount.com'
